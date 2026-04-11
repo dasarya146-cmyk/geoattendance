@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#006747" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin Panel — Geo Attendance</title>
+  <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <div class="bg-ambient" aria-hidden="true">
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+  </div>
+
+  <!-- Auth Guard Overlay -->
+  <div id="auth-overlay" style="position:fixed;inset:0;background:#020c07;display:flex;align-items:center;justify-content:center;z-index:9999;">
+    <div style="text-align:center;color:#4d7a62;">
+      <div style="width:36px;height:36px;border:3px solid rgba(0,103,71,0.3);border-top-color:#006747;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px;"></div>
+      <p style="font-size:0.85rem;">Verifying session...</p>
+    </div>
+  </div>
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+  <!-- Admin Header -->
+  <header class="admin-header" id="admin-header" style="display:none;" role="banner">
+    <div class="admin-header-inner">
+      <div class="admin-title-wrap">
+        <a href="/" style="display:flex;align-items:center;gap:6px;color:var(--color-text-3);font-size:0.82rem;margin-right:8px;transition:color 0.15s ease;"
+           onmouseover="this.style.color='var(--color-accent)'" onmouseout="this.style.color='var(--color-text-3)'"
+           aria-label="Back to attendance form">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </a>
+        <div style="width:1px;height:20px;background:var(--color-border);margin-right:8px;"></div>
+        <div class="gitam-logo-mark" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#006747"/>
+            <path d="M16 6C10.48 6 6 10.48 6 16s4.48 10 10 10c2.39 0 4.59-.84 6.32-2.23L20.18 21.6A7.95 7.95 0 0 1 16 23c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.79 0 3.42.67 4.65 1.78L21.77 8.66A9.94 9.94 0 0 0 16 6z" fill="white" opacity="0.9"/>
+          </svg>
+        </div>
+        <h1 class="admin-title">📊 Attendance Records</h1>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <!-- Google user avatar -->
+        <img id="admin-avatar" src="" alt="" width="28" height="28"
+          style="border-radius:50%;display:none;border:2px solid rgba(0,103,71,0.4);" />
+        <span id="admin-email-display"
+          style="font-size:0.75rem;color:var(--color-text-3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+          title=""></span>
+        <button id="logout-btn" class="btn-logout" aria-label="Log out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Admin Main -->
+  <main class="admin-main" id="admin-main" style="display:none;" role="main">
+
+    <!-- Stats -->
+    <section aria-label="Attendance statistics">
+      <div class="admin-stats" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-today">—</div>
+          <div class="stat-label">Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">All Time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-btech">—</div>
+          <div class="stat-label">BTech</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-mca">—</div>
+          <div class="stat-label">MCA</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-face">—</div>
+          <div class="stat-label">Face Verified</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table Card -->
+    <div class="table-card">
+      <div class="table-hdr">
+        <span class="table-hdr-title">Attendance Log</span>
+        <div class="table-controls">
+          <select id="filter-date" class="admin-select" aria-label="Filter by date">
+            <option value="today">Today</option>
+            <option value="all">All Records</option>
+          </select>
+          <select id="filter-course" class="admin-select" aria-label="Filter by course">
+            <option value="">All Courses</option>
+            <option value="BTech">BTech</option>
+            <option value="MCA">MCA</option>
+          </select>
+          <button id="export-btn" class="btn-export" aria-label="Export to CSV">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button id="refresh-btn" class="btn-export" style="background:rgba(96,165,250,0.1);color:var(--color-info);border-color:rgba(96,165,250,0.3);" aria-label="Refresh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <!-- Loading state -->
+        <div id="table-loading" class="table-state">
+          <div style="width:28px;height:28px;border:3px solid rgba(0,103,71,0.25);border-top-color:#00c47a;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+          <span>Loading records...</span>
+        </div>
+        <!-- Empty state -->
+        <div id="table-empty" class="table-state" style="display:none;">
+          <div class="table-state-icon">📭</div>
+          <p>No attendance records found for this filter.</p>
+        </div>
+        <!-- Error state -->
+        <div id="table-error" class="table-state" style="display:none;color:var(--color-error);">
+          <div class="table-state-icon">⚠️</div>
+          <p id="table-error-msg">Failed to load records.</p>
+        </div>
+        <!-- Data table -->
+        <table class="att-table" id="att-table" style="display:none;" aria-label="Attendance records">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Name</th>
+              <th scope="col">Branch</th>
+              <th scope="col">Sem</th>
+              <th scope="col">Course</th>
+              <th scope="col">Date</th>
+              <th scope="col">Time (IST)</th>
+              <th scope="col">Face</th>
+              <th scope="col">GPS</th>
+            </tr>
+          </thead>
+          <tbody id="att-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="admin-refresh-note" id="refresh-note"></p>
+  </main>
+
+  <!-- Firebase SDK (compat build) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+
+  <script>
+  'use strict';
+
+  const authOverlay  = document.getElementById('auth-overlay');
+  const adminHeader  = document.getElementById('admin-header');
+  const adminMain    = document.getElementById('admin-main');
+  const emailDisplay = document.getElementById('admin-email-display');
+  const logoutBtn    = document.getElementById('logout-btn');
+
+  // ── Auth Guard — onAuthStateChanged ────────────────────────────
+  window.auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      // Not signed in → redirect to login
+      window.location.replace('/login.html');
+      return;
+    }
+
+    // ── Strict email whitelist check (second layer of defence) ────
+    if (user.email !== window.ADMIN_EMAIL) {
+      console.warn('[Admin] Unauthorised account:', user.email);
+      await window.auth.signOut();
+      window.location.replace('/login.html');
+      return;
+    }
+
+    // ── Authorised: show dashboard ────────────────────────────────
+    const displayName = user.displayName || user.email;
+    emailDisplay.textContent  = displayName;
+    emailDisplay.title        = user.email;
+
+    // Show Google avatar if available
+    if (user.photoURL) {
+      const avatar = document.getElementById('admin-avatar');
+      if (avatar) {
+        avatar.src          = user.photoURL;
+        avatar.style.display = 'inline-block';
+      }
+    }
+
+    authOverlay.style.display = 'none';
+    adminHeader.style.display = '';
+    adminMain.style.display   = '';
+    loadData();
+  });
+
+
+  // ── Logout ─────────────────────────────────────────────────────
+  logoutBtn.addEventListener('click', async () => {
+    await window.auth.signOut();
+    window.location.replace('/login.html');
+  });
+
+  // ── Data & State ───────────────────────────────────────────────
+  let allRecords  = [];
+  let filter      = { date: 'today', course: '' };
+
+  const $ = id => document.getElementById(id);
+
+  async function loadData() {
+    showTableState('loading');
+
+    try {
+      const todayIST = window.getTodayIST();
+
+      let snap;
+      if (filter.date === 'today') {
+        // Query for today's records ordered by timestamp
+        snap = await window.db
+          .collection('attendance')
+          .where('date', '==', todayIST)
+          .orderBy('timestamp', 'asc')
+          .get();
+      } else {
+        // All records ordered by timestamp descending
+        snap = await window.db
+          .collection('attendance')
+          .orderBy('timestamp', 'desc')
+          .get();
+      }
+
+      // Also always get today's count for the stat card
+      const todaySnap = filter.date === 'today'
+        ? snap
+        : await window.db
+            .collection('attendance')
+            .where('date', '==', todayIST)
+            .get();
+
+      const todayDocs = todaySnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      allRecords      = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // ── Stats ─────────────────────────────────────────────────
+      const todayCount  = todayDocs.length;
+      const totalSnap   = filter.date === 'today'
+        ? await window.db.collection('attendance').get()
+        : snap;
+      const totalCount  = filter.date === 'today' ? totalSnap.size : allRecords.length;
+
+      const btechToday  = todayDocs.filter(r => r.course === 'BTech').length;
+      const mcaToday    = todayDocs.filter(r => r.course === 'MCA').length;
+      const faceToday   = todayDocs.filter(r => r.face_verified).length;
+
+      $('stat-today').textContent = todayCount;
+      $('stat-total').textContent = totalCount;
+      $('stat-btech').textContent = btechToday;
+      $('stat-mca').textContent   = mcaToday;
+      $('stat-face').textContent  = faceToday;
+
+      renderTable();
+
+      $('refresh-note').textContent =
+        `Last refreshed: ${new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true })} IST`;
+
+    } catch (err) {
+      console.error('[Admin] loadData error:', err);
+      if (err.code === 'permission-denied') {
+        showTableState('error', 'Permission denied. Please log in again.');
+        setTimeout(() => window.auth.signOut(), 2000);
+      } else if (err.code === 'failed-precondition') {
+        // Index not yet built
+        showTableState('error', 'Firestore index is still building. Please wait a minute and refresh.');
+      } else {
+        showTableState('error', 'Failed to load records. Check your internet connection.');
+      }
+    }
+  }
+
+  function renderTable() {
+    let records = allRecords;
+    if (filter.course) {
+      records = records.filter(r => r.course === filter.course);
+    }
+
+    if (!records.length) {
+      showTableState('empty');
+      return;
+    }
+
+    const tbody = $('att-tbody');
+    tbody.innerHTML = '';
+
+    records.forEach((r, i) => {
+      const tr          = document.createElement('tr');
+      const courseClass = r.course === 'BTech' ? 'badge-btech' : 'badge-mca';
+      const gps         = r.latitude != null ? `${Number(r.latitude).toFixed(4)}, ${Number(r.longitude).toFixed(4)}` : '—';
+      const timeStr     = r.timestamp?.toDate ? formatISTTime(r.timestamp.toDate()) : '—';
+      tr.innerHTML = `
+        <td style="color:var(--color-text-3)">${i + 1}</td>
+        <td style="font-weight:600">${esc(r.name)}</td>
+        <td>${esc(r.branch)}</td>
+        <td>${esc(r.semester)}</td>
+        <td><span class="course-badge ${courseClass}">${esc(r.course)}</span></td>
+        <td style="font-variant-numeric:tabular-nums">${esc(r.date)}</td>
+        <td style="font-family:monospace;font-variant-numeric:tabular-nums">${timeStr}</td>
+        <td class="${r.face_verified ? 'face-check-yes' : 'face-check-no'}">${r.face_verified ? '✓' : '✗'}</td>
+        <td style="font-family:monospace;font-size:0.72rem;color:var(--color-text-3)">${gps}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    $('att-table').style.display    = 'table';
+    $('table-loading').style.display = 'none';
+    $('table-empty').style.display   = 'none';
+    $('table-error').style.display   = 'none';
+  }
+
+  function showTableState(state, msg = '') {
+    $('table-loading').style.display = state === 'loading' ? '' : 'none';
+    $('table-empty').style.display   = state === 'empty'   ? '' : 'none';
+    $('table-error').style.display   = state === 'error'   ? '' : 'none';
+    $('att-table').style.display     = 'none';
+    if (state === 'error' && msg) $('table-error-msg').textContent = msg;
+  }
+
+  function formatISTTime(date) {
+    try {
+      return date.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata', hour12: true,
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      });
+    } catch { return '—'; }
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+    );
+  }
+
+  // ── CSV Export ─────────────────────────────────────────────────
+  $('export-btn').addEventListener('click', () => {
+    let data = allRecords;
+    if (filter.course) data = data.filter(r => r.course === filter.course);
+    if (!data.length) { alert('No records to export.'); return; }
+
+    const headers = ['#', 'Name', 'Branch', 'Semester', 'Course', 'Date', 'Time (IST)', 'Face Verified', 'Latitude', 'Longitude'];
+    const rows = data.map((r, i) => [
+      i + 1,
+      `"${(r.name    || '').replace(/"/g, '""')}"`,
+      `"${(r.branch  || '').replace(/"/g, '""')}"`,
+      `"${(r.semester|| '').replace(/"/g, '""')}"`,
+      r.course,
+      r.date,
+      `"${r.timestamp?.toDate ? formatISTTime(r.timestamp.toDate()) : ''}"`,
+      r.face_verified ? 'Yes' : 'No',
+      r.latitude  != null ? r.latitude  : '',
+      r.longitude != null ? r.longitude : '',
+    ]);
+
+    const csv  = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `gitam-attendance-${filter.date}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ── Filters ────────────────────────────────────────────────────
+  $('filter-date'  ).addEventListener('change', e => { filter.date   = e.target.value; loadData(); });
+  $('filter-course').addEventListener('change', e => { filter.course = e.target.value; renderTable(); });
+  $('refresh-btn'  ).addEventListener('click',  () => loadData());
+
+  // Auto-refresh every 60 seconds
+  setInterval(loadData, 60000);
+  </script>
+</body>
+</html>

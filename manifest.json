@@ -1,0 +1,27 @@
+{
+  "name": "GITAM Geo Attendance",
+  "short_name": "Geo Attend",
+  "description": "Location and face-based attendance for Microsoft & Redington Training Program, GITAM Bhubaneswar",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020c07",
+  "theme_color": "#006747",
+  "categories": ["education", "productivity", "utilities"],
+  "scope": "/",
+  "lang": "en-IN",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

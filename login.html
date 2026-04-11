@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#006747" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin Login — Geo Attendance</title>
+  <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    /* ── Google Sign-In Button ─────────────────────────────────── */
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 13px 20px;
+      background: #ffffff;
+      color: #3c4043;
+      border: 1.5px solid rgba(0, 0, 0, 0.12);
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .google-btn:hover:not(:disabled) {
+      background: #f8f9fa;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+    .google-btn:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+    .google-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .google-btn .g-logo {
+      flex-shrink: 0;
+    }
+    .google-btn-text {
+      flex: 1;
+      text-align: center;
+    }
+
+    /* ── Divider ───────────────────────────────────────────────── */
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0;
+      color: var(--color-text-3);
+      font-size: 0.78rem;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    /* ── Access Denied state ───────────────────────────────────── */
+    .denied-card {
+      text-align: center;
+      padding: 12px 0;
+    }
+    .denied-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    .denied-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--color-error, #f87171);
+      margin-bottom: 6px;
+    }
+    .denied-sub {
+      font-size: 0.82rem;
+      color: var(--color-text-3);
+      line-height: 1.5;
+    }
+
+    /* ── Loading spinner overlay ───────────────────────────────── */
+    .auth-checking {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 0;
+      color: var(--color-text-3);
+      font-size: 0.85rem;
+    }
+    .auth-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(0, 103, 71, 0.25);
+      border-top-color: #00c47a;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="auth-page">
+
+  <div class="bg-ambient" aria-hidden="true">
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+  </div>
+
+  <main class="auth-main" role="main">
+    <div class="auth-card" id="auth-card">
+
+      <!-- Logo -->
+      <div class="auth-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      </div>
+
+      <h1 class="auth-title" id="login-title">Admin Login</h1>
+      <p class="auth-subtitle">Geo Attendance System — GITAM Bhubaneswar</p>
+
+      <!-- Session checking state -->
+      <div id="state-checking" class="auth-checking">
+        <div class="auth-spinner"></div>
+        <span>Checking session...</span>
+      </div>
+
+      <!-- Sign-in state (hidden until check completes) -->
+      <div id="state-signin" style="display:none;">
+        <!-- Error / denied message -->
+        <div class="auth-error" id="login-error" role="alert" style="display:none;margin-bottom:16px;"></div>
+
+        <!-- Access denied card (shown after wrong Google account) -->
+        <div id="denied-view" class="denied-card" style="display:none;">
+          <div class="denied-icon">⛔</div>
+          <div class="denied-title">Access Denied</div>
+          <p class="denied-sub">
+            Your Google account is not authorised to access this panel.<br>
+            Please use the registered admin account.
+          </p>
+          <button id="try-again-btn" class="auth-btn" style="margin-top:18px;background:rgba(0,103,71,0.12);color:var(--color-accent);">
+            Try a different account
+          </button>
+        </div>
+
+        <!-- Google sign-in view -->
+        <div id="signin-view">
+          <div class="auth-divider">Sign in with Google</div>
+
+          <button id="google-btn" class="google-btn" type="button" aria-label="Sign in with Google">
+            <!-- Official Google G logo -->
+            <svg class="g-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
+              <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+              <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+              <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+              <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+              <path fill="none" d="M2 2h44v44H2z"/>
+            </svg>
+            <span class="google-btn-text" id="google-btn-text">Sign in with Google</span>
+          </button>
+
+          <div class="auth-back" style="margin-top:20px;">
+            <a href="/" aria-label="Back to attendance form">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              Back to Attendance Form
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+
+  <script>
+  'use strict';
+
+  // ── DOM refs ─────────────────────────────────────────────────────
+  const stateChecking = document.getElementById('state-checking');
+  const stateSignin   = document.getElementById('state-signin');
+  const loginError    = document.getElementById('login-error');
+  const deniedView    = document.getElementById('denied-view');
+  const signinView    = document.getElementById('signin-view');
+  const googleBtn     = document.getElementById('google-btn');
+  const googleBtnText = document.getElementById('google-btn-text');
+  const tryAgainBtn   = document.getElementById('try-again-btn');
+
+  // ── UI state helpers ─────────────────────────────────────────────
+  function showSignIn() {
+    stateChecking.style.display = 'none';
+    stateSignin.style.display   = '';
+    deniedView.style.display    = 'none';
+    signinView.style.display    = '';
+    loginError.style.display    = 'none';
+  }
+
+  function showDenied() {
+    stateChecking.style.display = 'none';
+    stateSignin.style.display   = '';
+    signinView.style.display    = 'none';
+    deniedView.style.display    = '';
+  }
+
+  function showError(msg) {
+    loginError.textContent   = msg;
+    loginError.style.display = 'block';
+  }
+
+  function setLoading(on) {
+    googleBtn.disabled      = on;
+    googleBtnText.textContent = on ? 'Signing in...' : 'Sign in with Google';
+  }
+
+  // ── onAuthStateChanged — single source of truth ──────────────────
+  // Handles both fresh sign-in and page refresh with existing session.
+  window.auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      // Not signed in — show the login button
+      showSignIn();
+      return;
+    }
+
+    // User is signed in — enforce email whitelist
+    if (user.email !== window.ADMIN_EMAIL) {
+      // Wrong Google account → deny access and sign out immediately
+      showDenied();
+      try { await window.auth.signOut(); } catch (_) {}
+      return;
+    }
+
+    // Authorised — redirect to admin dashboard
+    window.location.replace('/admin.html');
+  });
+
+  // ── Handle redirect result (iOS Safari uses redirect, not popup) ─
+  // getRedirectResult resolves with null on pages that didn't trigger a redirect.
+  window.auth.getRedirectResult().catch((err) => {
+    // Ignore redirect-not-found errors; handle real errors
+    if (err && err.code !== 'auth/no-current-user') {
+      console.warn('[getRedirectResult]', err.code);
+      showSignIn();
+      showError(friendlyError(err.code));
+    }
+  });
+
+  // ── Google Sign-In ───────────────────────────────────────────────
+  googleBtn.addEventListener('click', async () => {
+    setLoading(true);
+    loginError.style.display = 'none';
+
+    try {
+      // Detect iOS Safari where popups are unreliable
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      if (isIOS || isSafari) {
+        // Use redirect flow for Safari / iOS
+        await window.auth.signInWithRedirect(window.googleProvider);
+        // Execution stops here on redirect pages
+      } else {
+        await window.auth.signInWithPopup(window.googleProvider);
+        // onAuthStateChanged fires automatically after signInWithPopup
+      }
+    } catch (err) {
+      console.error('[Google Sign-In]', err.code, err.message);
+      setLoading(false);
+
+      // User just closed the popup — treat as cancellation, not an error
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        return;
+      }
+      // Popup was blocked — fall back to redirect
+      if (err.code === 'auth/popup-blocked') {
+        try {
+          await window.auth.signInWithRedirect(window.googleProvider);
+        } catch (redirErr) {
+          showError(friendlyError(redirErr.code));
+        }
+        return;
+      }
+      showError(friendlyError(err.code));
+    }
+  });
+
+  // ── "Try a different account" ────────────────────────────────────
+  tryAgainBtn.addEventListener('click', () => {
+    showSignIn();
+    googleBtn.click();
+  });
+
+  // ── Error messages ───────────────────────────────────────────────
+  function friendlyError(code) {
+    const map = {
+      'auth/network-request-failed': 'Network error. Please check your internet connection.',
+      'auth/user-disabled':          'This account has been disabled.',
+      'auth/account-exists-with-different-credential': 'An account already exists with the same email address.',
+    };
+    return map[code] || 'Sign-in failed. Please try again.';
+  }
+  </script>
+</body>
+</html>

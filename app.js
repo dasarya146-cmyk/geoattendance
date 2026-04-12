@@ -182,14 +182,7 @@ async function captureLocation() {
         el.captureBtnLabel.textContent = 'Retry Location';
       }
       
-      const dirBtn = document.getElementById('directions-btn');
-      if (dirBtn) {
-        dirBtn.style.display = 'flex';
-        dirBtn.onclick = () => {
-          window.open(`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${CONFIG.campus.lat},${CONFIG.campus.lon}`, '_blank');
-        };
-      }
-      
+
       updateConditions();
     },
     (err) => {
@@ -205,6 +198,8 @@ async function captureLocation() {
       const msg = msgs[err.code] || 'GPS error. Please try again.';
       setLocationState('error', 'Location failed', msg);
       showFieldError(el.locationError, msg);
+      
+
       updateConditions();
     },
     {
@@ -400,8 +395,8 @@ async function handleSubmit() {
     branch: cleanBranch,
     semester: cleanSemester,
     course: cleanCourse,
-    latitude: state.location.lat,
-    longitude: state.location.lon,
+    lat: state.location.lat,
+    lng: state.location.lon,
     face_verified: true,
     date: today,
     timestamp: timestamp,
@@ -423,8 +418,8 @@ async function handleSubmit() {
           branch:       cleanBranch,
           semester:     cleanSemester,
           course:       cleanCourse,
-          latitude:     state.location.lat,
-          longitude:    state.location.lon,
+          lat:          state.location.lat,
+          lng:         state.location.lon,
           face_verified: true,
           timestamp:    timestamp
         }),
@@ -582,6 +577,37 @@ function init() {
 
   el.captureBtn?.addEventListener('click', captureLocation);
   el.startCameraBtn?.addEventListener('click', startCamera);
+
+  const dirBtn = document.getElementById('directions-btn');
+  if (dirBtn) {
+    dirBtn.addEventListener('click', () => {
+      // Temporarily change button to show it's loading
+      const prevText = dirBtn.innerHTML;
+      dirBtn.innerHTML = 'Getting location...';
+      
+      const openDestOnly = () => {
+         dirBtn.innerHTML = prevText;
+         window.open(`https://www.google.com/maps/dir/?api=1&destination=${CONFIG.campus.lat},${CONFIG.campus.lon}`, '_blank');
+      };
+      
+      if (!navigator.geolocation) {
+         openDestOnly();
+         return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          dirBtn.innerHTML = prevText;
+          const { latitude: lat, longitude: lon } = pos.coords;
+          window.open(`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${CONFIG.campus.lat},${CONFIG.campus.lon}`, '_blank');
+        },
+        (err) => {
+          openDestOnly();
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    });
+  }
 
   [el.nameInput, el.branchInput, el.semesterInput].forEach(inp => {
     inp?.addEventListener('input', () => {

@@ -81,7 +81,7 @@
           <div class="stat-label">BTech</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value" id="stat-mca">â€”</div>
+          <div class="stat-value" id="stat-mca">—</div>
           <div class="stat-label">MCA</div>
         </div>
         <div class="stat-card">
@@ -292,9 +292,9 @@
     records.forEach((r, i) => {
       const tr          = document.createElement('tr');
       const courseClass = r.course === 'BTech' ? 'badge-btech' : 'badge-mca';
-      const gps         = r.latitude != null
-        ? `${Number(r.latitude).toFixed(4)}, ${Number(r.longitude).toFixed(4)}`
-        : 'â€”';
+      const gps         = r.lat != null
+        ? `${Number(r.lat).toFixed(4)}, ${Number(r.lng).toFixed(4)}`
+        : (r.latitude != null ? `${Number(r.latitude).toFixed(4)}, ${Number(r.longitude).toFixed(4)}` : '—');
       const timeStr = r.timestamp ? formatISTTime(r.timestamp) : 'â€”';
 
       tr.innerHTML = `
@@ -357,8 +357,8 @@
       r.date,
       `"${r.timestamp ? formatISTTime(r.timestamp) : ''}"`,
       r.face_verified ? 'Yes' : 'No',
-      r.latitude  != null ? r.latitude  : '',
-      r.longitude != null ? r.longitude : '',
+      r.lat != null ? r.lat : (r.latitude != null ? r.latitude : ''),
+      r.lng != null ? r.lng : (r.longitude != null ? r.longitude : ''),
       r.distance  || '',
     ]);
 

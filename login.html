@@ -98,7 +98,10 @@
       align-items: center;
       gap: 12px;
       padding: 20px 0;
-      color: var(--color-t    /* ── Form styling ──────────────────────────────────────────── */
+      color: var(--color-text-2);
+    }
+    
+    /* ── Form styling ──────────────────────────────────────────── */
     .form-group {
       margin-bottom: 15px;
       text-align: left;
@@ -280,8 +283,7 @@
     loginError.style.display = 'none';
 
     try {
-      // Unconditionally use redirect for GitHub Pages compatibility
-      await window.auth.signInWithRedirect(window.googleProvider);
+      await window.auth.signInWithPopup(window.googleProvider);
     } catch (err) {
       console.error('[Google Sign-In]', err.code, err.message);
       setGoogleLoading(false);

@@ -215,20 +215,26 @@
     showTableState('loading');
 
     try {
+      let dataRecords = [];
       if (!window.SHEETS_API_URL || window.SHEETS_API_URL.includes('REPLACE_WITH')) {
-        showTableState('error', 'Sheets API URL not configured. Please update sheets-config.js.');
-        return;
+        // Fallback to local storage
+        dataRecords = JSON.parse(localStorage.getItem('attendance_records') || '[]');
+        if(filter.date === 'today'){
+           const todayIST = window.getTodayIST();
+           dataRecords = dataRecords.filter(r => r.date === todayIST);
+        }
+      } else {
+        // Fetch current filter view from Apps Script
+        const url      = `${window.SHEETS_API_URL}?filter=${filter.date}`;
+        const response = await fetch(url, { redirect: 'follow' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        if (!data.success) { showTableState('error', data.error || 'Failed to load records.'); return; }
+        dataRecords = data.records || [];
       }
 
-      // Fetch current filter view from Apps Script
-      const url      = `${window.SHEETS_API_URL}?filter=${filter.date}`;
-      const response = await fetch(url, { redirect: 'follow' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
-      if (!data.success) { showTableState('error', data.error || 'Failed to load records.'); return; }
-
-      allRecords = data.records || [];
+      allRecords = dataRecords;
 
       // â”€â”€ Compute stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       const todayIST = window.getTodayIST();
@@ -252,10 +258,15 @@
       $('stat-face').textContent  = faceToday;
 
       if (filter.date === 'today') {
-        fetch(`${window.SHEETS_API_URL}?filter=all`, { redirect: 'follow' })
-          .then(r => r.json())
-          .then(d => { if (d.success) $('stat-total').textContent = d.count || 0; })
-          .catch(() => { $('stat-total').textContent = 'â€”'; });
+        if (!window.SHEETS_API_URL || window.SHEETS_API_URL.includes('REPLACE_WITH')) {
+          const allLocal = JSON.parse(localStorage.getItem('attendance_records') || '[]');
+          $('stat-total').textContent = allLocal.length;
+        } else {
+          fetch(`${window.SHEETS_API_URL}?filter=all`, { redirect: 'follow' })
+            .then(r => r.json())
+            .then(d => { if (d.success) $('stat-total').textContent = d.count || 0; })
+            .catch(() => { $('stat-total').textContent = '—'; });
+        }
       }
 
       renderTable();

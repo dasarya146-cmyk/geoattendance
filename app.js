@@ -7,9 +7,9 @@
 
 // ── Campus / Attendance Config ────────────────────────────────────
 const CONFIG = {
-  campus: { lat: 20.2225, lon: 85.673611, maxMeters: 500 },
+  campus: { lat: 20.2169125, lon: 85.6829219, maxMeters: 700 }, // updated
   window: { startH: 9, startM: 0, endH: 9, endM: 45 },
-  gps: { timeout: 12000, maximumAge: 30000, enableHighAccuracy: true },
+  gps: { timeout: 10000, maximumAge: 0, enableHighAccuracy: true },
 };
 
 // ── State ─────────────────────────────────────────────────────────
@@ -181,6 +181,15 @@ async function captureLocation() {
         el.captureBtn.disabled = false;
         el.captureBtnLabel.textContent = 'Retry Location';
       }
+      
+      const dirBtn = document.getElementById('directions-btn');
+      if (dirBtn) {
+        dirBtn.style.display = 'flex';
+        dirBtn.onclick = () => {
+          window.open(`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${CONFIG.campus.lat},${CONFIG.campus.lon}`, '_blank');
+        };
+      }
+      
       updateConditions();
     },
     (err) => {
@@ -370,44 +379,80 @@ async function handleSubmit() {
   if (cleanName.length < 2) { showResult(false, 'Please enter your full name (min 2 characters).'); return; }
   if (!['BTech', 'MCA'].includes(cleanCourse)) { showResult(false, 'Course must be BTech or MCA.'); return; }
 
+  // Check for duplicate attendance today
+  const today = window.getTodayIST();
+  const duplicateKey = `att_${today}_${cleanName.toLowerCase()}_${cleanBranch.toLowerCase()}`;
+  if (localStorage.getItem(duplicateKey)) {
+    showResult(false, 'You have already marked attendance today.');
+    return;
+  }
+
   state.submitting = true;
   el.submitBtn.disabled = true;
   el.submitBtn.classList.add('is-loading');
 
+  const nowRaw = new Date();
+  const timestamp = nowRaw.toISOString();
+
+  // Prepare local record
+  const localRecord = {
+    name: cleanName,
+    branch: cleanBranch,
+    semester: cleanSemester,
+    course: cleanCourse,
+    latitude: state.location.lat,
+    longitude: state.location.lon,
+    face_verified: true,
+    date: today,
+    timestamp: timestamp,
+    time: nowRaw.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }),
+    distanceFromCampus: Math.round(state.location.distance) + 'm'
+  };
+
   try {
-    if (!window.SHEETS_API_URL || window.SHEETS_API_URL.includes('REPLACE_WITH')) {
-      showResult(false, 'Configuration error: Apps Script URL not set. Please update sheets-config.js.');
-      return;
+    let sheetsSuccess = false;
+    let data;
+
+    if (window.SHEETS_API_URL && !window.SHEETS_API_URL.includes('REPLACE_WITH')) {
+      // ── POST to Google Apps Script Web App ────────────────────────
+      const response = await fetch(window.SHEETS_API_URL, {
+        method:   'POST',
+        headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:     JSON.stringify({
+          name:         cleanName,
+          branch:       cleanBranch,
+          semester:     cleanSemester,
+          course:       cleanCourse,
+          latitude:     state.location.lat,
+          longitude:    state.location.lon,
+          face_verified: true,
+          timestamp:    timestamp
+        }),
+        redirect: 'follow',
+      });
+
+      if (!response.ok) throw new Error(`Server responded with HTTP ${response.status}`);
+
+      data = await response.json();
+      if (!data.success) {
+        showResult(false, data.error || 'Submission failed. Please try again.');
+        return;
+      }
+      sheetsSuccess = true;
     }
 
-    // ── POST to Google Apps Script Web App ────────────────────────
-    // Content-Type: text/plain avoids CORS preflight (Apps Script
-    // does not handle OPTIONS). Apps Script reads e.postData.contents.
-    const response = await fetch(window.SHEETS_API_URL, {
-      method:   'POST',
-      headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:     JSON.stringify({
-        name:         cleanName,
-        branch:       cleanBranch,
-        semester:     cleanSemester,
-        course:       cleanCourse,
-        latitude:     state.location.lat,
-        longitude:    state.location.lon,
-        face_verified: true,
-      }),
-      redirect: 'follow',
-    });
+    // Save to frontend LocalStorage
+    const stored = JSON.parse(localStorage.getItem('attendance_records') || '[]');
+    stored.push(localRecord);
+    localStorage.setItem('attendance_records', JSON.stringify(stored));
+    localStorage.setItem(duplicateKey, "true");
 
-    if (!response.ok) throw new Error(`Server responded with HTTP ${response.status}`);
-
-    const data = await response.json();
-
-    if (data.success) {
-      showResult(true, data.message, data.data);
-      resetForm();
+    if (sheetsSuccess && data) {
+      showResult(true, data.message, localRecord); // use data.data if provided, or localRecord
     } else {
-      showResult(false, data.error || 'Submission failed. Please try again.');
+      showResult(true, "Attendance recorded successfully (Local Storage fallback).", localRecord);
     }
+    resetForm();
 
   } catch (err) {
     console.error('[Submit Error]', err);

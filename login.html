@@ -175,21 +175,7 @@
 
         <!-- Login views -->
         <div id="signin-view">
-          <form id="email-form">
-            <div class="form-group">
-              <label for="email-input">Email Address</label>
-              <input type="email" id="email-input" class="form-control" placeholder="admin@example.com" required aria-label="Email" />
-            </div>
-            <div class="form-group">
-              <label for="password-input">Password</label>
-              <input type="password" id="password-input" class="form-control" placeholder="••••••••" required aria-label="Password" />
-            </div>
-            <button type="submit" id="email-submit-btn" class="auth-btn" style="width: 100%; margin-top: 10px;">
-              Sign In
-            </button>
-          </form>
 
-          <div class="auth-divider">or sign in with Google</div>
 
           <button id="google-btn" class="google-btn" type="button" aria-label="Sign in with Google">
             <!-- Official Google G logo -->
@@ -231,10 +217,6 @@
   const signinView      = document.getElementById('signin-view');
   const googleBtn       = document.getElementById('google-btn');
   const googleBtnText   = document.getElementById('google-btn-text');
-  const emailForm       = document.getElementById('email-form');
-  const emailInput      = document.getElementById('email-input');
-  const passwordInput   = document.getElementById('password-input');
-  const emailSubmitBtn  = document.getElementById('email-submit-btn');
   const tryAgainBtn     = document.getElementById('try-again-btn');
 
   // ── UI state helpers ─────────────────────────────────────────────
@@ -261,13 +243,6 @@
   function setGoogleLoading(on) {
     googleBtn.disabled        = on;
     googleBtnText.textContent = on ? 'Signing in...' : 'Sign in with Google';
-    emailSubmitBtn.disabled   = on;
-  }
-
-  function setEmailLoading(on) {
-    emailSubmitBtn.disabled     = on;
-    emailSubmitBtn.textContent  = on ? 'Signing in...' : 'Sign In';
-    googleBtn.disabled          = on;
   }
 
   // ── onAuthStateChanged — single source of truth ──────────────────
@@ -297,20 +272,7 @@
     }
   });
 
-  // ── Email / Password Sign-In ─────────────────────────────────────
-  emailForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    loginError.style.display = 'none';
-    setEmailLoading(true);
 
-    try {
-      await window.auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value);
-    } catch (err) {
-      setEmailLoading(false);
-      console.error('[Email Sign-In Error]', err);
-      showError(friendlyError(err.code));
-    }
-  });
 
   // ── Google Sign-In ───────────────────────────────────────────────
   googleBtn.addEventListener('click', async () => {
@@ -318,14 +280,8 @@
     loginError.style.display = 'none';
 
     try {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-      if (isIOS || isSafari) {
-        await window.auth.signInWithRedirect(window.googleProvider);
-      } else {
-        await window.auth.signInWithPopup(window.googleProvider);
-      }
+      // Unconditionally use redirect for GitHub Pages compatibility
+      await window.auth.signInWithRedirect(window.googleProvider);
     } catch (err) {
       console.error('[Google Sign-In]', err.code, err.message);
       setGoogleLoading(false);

@@ -153,7 +153,7 @@
         Step 1
       </div>
       <h2 class="card-title" id="location-heading">GPS Location</h2>
-      <p class="card-desc">Your location must be within 120m of GITAM campus.</p>
+      <p class="card-desc">Your location must be within 700m of GITAM campus.</p>
 
       <div class="location-status-box" id="location-status-box" data-state="idle" role="status" aria-live="polite">
         <div class="loc-icon" id="loc-icon" aria-hidden="true">
@@ -198,6 +198,16 @@
         <span id="capture-btn-label">Capture My Location</span>
       </button>
       <p class="field-error" id="location-error" role="alert"></p>
+      
+      <button type="button" id="directions-btn" class="btn btn-outline btn-full" style="margin-top: 0.8rem; display: none;">
+        <span class="btn-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 17 4 12 9 7" />
+            <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+          </svg>
+        </span>
+        Get Directions to Campus
+      </button>
     </section>
 
     <!-- ── SECTION 2: Face Authentication ──────────────────── -->
@@ -366,7 +376,7 @@
         </div>
         <div class="cond-item" id="cond-location" data-met="false">
           <span class="cond-icon" aria-hidden="true"></span>
-          <span class="cond-text">Location verified (within 120m)</span>
+          <span class="cond-text">Location verified (within 700m)</span>
         </div>
         <div class="cond-item" id="cond-face" data-met="false">
           <span class="cond-icon" aria-hidden="true"></span>
@@ -420,7 +430,7 @@
         <div class="rule-icon" aria-hidden="true">📍</div>
         <div class="rule-body">
           <div class="rule-title">Campus Radius</div>
-          <div class="rule-value">120 Meters</div>
+          <div class="rule-value">700 Meters</div>
           <div class="rule-note">Must be on campus</div>
         </div>
       </div>

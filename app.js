@@ -7,7 +7,7 @@
 
 // ── Campus / Attendance Config ────────────────────────────────────
 const CONFIG = {
-  campus: { lat: 20.2961, lon: 85.8245, maxMeters: 120 },
+  campus: { lat: 20.2225, lon: 85.673611, maxMeters: 500 },
   window: { startH: 9, startM: 0, endH: 9, endM: 45 },
   gps: { timeout: 12000, maximumAge: 30000, enableHighAccuracy: true },
 };
@@ -375,59 +375,46 @@ async function handleSubmit() {
   el.submitBtn.classList.add('is-loading');
 
   try {
-    const today = window.getTodayIST();
-    const nameLow = cleanName.toLowerCase();
-
-    // ── Duplicate check via Firestore query ───────────────────────
-    const dupSnap = await window.db
-      .collection('attendance')
-      .where('name_lower', '==', nameLow)
-      .where('date', '==', today)
-      .limit(1)
-      .get();
-
-    if (!dupSnap.empty) {
-      showResult(false, `Attendance for "${cleanName}" is already marked for today (${today}).`);
+    if (!window.SHEETS_API_URL || window.SHEETS_API_URL.includes('REPLACE_WITH')) {
+      showResult(false, 'Configuration error: Apps Script URL not set. Please update sheets-config.js.');
       return;
     }
 
-    // ── Get time string for display ───────────────────────────────
-    const timeStr = new Date().toLocaleTimeString('en-IN', {
-      timeZone: 'Asia/Kolkata', hour12: true,
-      hour: '2-digit', minute: '2-digit',
+    // ── POST to Google Apps Script Web App ────────────────────────
+    // Content-Type: text/plain avoids CORS preflight (Apps Script
+    // does not handle OPTIONS). Apps Script reads e.postData.contents.
+    const response = await fetch(window.SHEETS_API_URL, {
+      method:   'POST',
+      headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:     JSON.stringify({
+        name:         cleanName,
+        branch:       cleanBranch,
+        semester:     cleanSemester,
+        course:       cleanCourse,
+        latitude:     state.location.lat,
+        longitude:    state.location.lon,
+        face_verified: true,
+      }),
+      redirect: 'follow',
     });
 
-    // ── Write to Firestore ────────────────────────────────────────
-    await window.db.collection('attendance').add({
-      name: cleanName,
-      name_lower: nameLow,
-      branch: cleanBranch,
-      semester: cleanSemester,
-      course: cleanCourse,
-      latitude: state.location.lat,
-      longitude: state.location.lon,
-      face_verified: true,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      date: today,
-    });
+    if (!response.ok) throw new Error(`Server responded with HTTP ${response.status}`);
 
-    showResult(true, `Attendance marked successfully for ${cleanName}!`, {
-      name: cleanName,
-      course: cleanCourse,
-      date: today,
-      time: timeStr,
-      distanceFromCampus: `${Math.round(state.location.distance)}m`,
-    });
-    resetForm();
+    const data = await response.json();
+
+    if (data.success) {
+      showResult(true, data.message, data.data);
+      resetForm();
+    } else {
+      showResult(false, data.error || 'Submission failed. Please try again.');
+    }
 
   } catch (err) {
     console.error('[Submit Error]', err);
     if (!navigator.onLine) {
       showResult(false, 'You appear to be offline. Please check your internet connection and try again.');
-    } else if (err.code === 'permission-denied') {
-      showResult(false, 'Submission blocked by security rules. Please ensure all fields are correctly filled.');
     } else {
-      showResult(false, 'Could not save attendance. Please try again.');
+      showResult(false, 'Could not submit attendance. Please try again in a moment.');
     }
   } finally {
     state.submitting = false;
@@ -532,7 +519,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('[SW] Registered:', reg.scope))
       .catch(err => console.warn('[SW] Failed:', err));
   });

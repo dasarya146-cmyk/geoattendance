@@ -4,15 +4,15 @@
 const CACHE = 'geo-att-v2';
 
 const SHELL = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/style.css',
-  '/app.js',
-  '/face-auth.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  './',
+  './index.html',
+  './login.html',
+  './style.css',
+  './app.js',
+  './face-auth.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 // ── Install ───────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(request, clone));
           return res;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match('./index.html'))
     );
     return;
   }

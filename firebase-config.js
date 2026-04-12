@@ -1,29 +1,32 @@
 /* ================================================================
-   firebase-config.js — Shared Firebase Initialization
+   firebase-config.js — Firebase Auth Initialization
    Geo Attendance System v3.0 — GITAM Bhubaneswar
    ================================================================
-   Required CDN scripts (load BEFORE this file in every HTML page):
+   Only Firebase Auth is used now. Attendance data is stored in
+   Google Sheets via the Apps Script backend (sheets-config.js).
+
+   Required CDN scripts (load BEFORE this file):
      firebase-app-compat.js
      firebase-auth-compat.js
-     firebase-firestore-compat.js
    ================================================================ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBq-qDmJ7wXKHb_pgqxf09OfJ_hT-ZiLk",
-  authDomain: "geoattendance-arya.firebaseapp.com",
-  projectId: "geoattendance-arya",
-  storageBucket: "geoattendance-arya.firebasestorage.app",
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBq-qDmJ7wXKHb_pgqxf09OfJ_hT-ZiLk",
+  authDomain:        "geoattendance-arya.firebaseapp.com",
+  projectId:         "geoattendance-arya",
+  storageBucket:     "geoattendance-arya.firebasestorage.app",
   messagingSenderId: "840798867052",
-  appId: "1:840798867052:web:9370a866eae36b41d6d249",
-  measurementId: "G-21R6HQQPTB"
+  appId:             "1:840798867052:web:9370a866eae36b41d6d249",
+  measurementId:     "G-21R6HQQPTB",
 };
+
 // ── Initialise only once ─────────────────────────────────────────
 if (!firebase.apps.length) {
   firebase.initializeApp(FIREBASE_CONFIG);
 }
 
-// ── Shared instances on window ───────────────────────────────────
-window.db = firebase.firestore();
+// ── Firebase Auth instance ───────────────────────────────────────
+// NOTE: Firestore is no longer used — data goes to Google Sheets.
 window.auth = firebase.auth();
 
 // ── Google Auth Provider ─────────────────────────────────────────

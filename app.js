@@ -8,7 +8,7 @@
 // ── Campus / Attendance Config ────────────────────────────────────
 const CONFIG = {
   campus: { lat: 20.2169125, lon: 85.6829219, maxMeters: 700 }, // updated
-  window: { startH: 9, startM: 0, endH: 11, endM: 0 },
+  window: { startH: 0, startM: 0, endH: 23, endM: 59 },
   gps: { timeout: 10000, maximumAge: 0, enableHighAccuracy: true },
 };
 
@@ -112,8 +112,8 @@ function updateClock() {
     el.windowDot.className = 'status-dot ' + (inWindow ? 'dot-open' : 'dot-closed');
   if (el.windowLabel)
     el.windowLabel.textContent = inWindow
-      ? 'Attendance window is OPEN (9:00 – 11:00 AM)'
-      : 'Window closed — opens 9:00 AM daily';
+      ? 'Attendance window is OPEN (All Day)'
+      : 'Window closed';
   if (el.banner) {
     el.banner.classList.toggle('banner-open', inWindow);
     el.banner.classList.toggle('banner-closed', !inWindow);
@@ -742,7 +742,7 @@ window.markAttendance = async function() {
        submitBtn.disabled = false;
        submitBtn.classList.remove('is-loading');
     }
-    alert("Attendance window is closed. Please submit between 9:00 AM and 11:00 AM IST.");
+    alert("Attendance window is closed.");
     return;
   }
 

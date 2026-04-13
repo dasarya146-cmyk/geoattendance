@@ -597,6 +597,9 @@ a { color: inherit; text-decoration: none; }
   z-index: 20;
   animation: overlay-in 0.4s ease;
 }
+.verified-overlay[hidden] {
+  display: none !important;
+}
 .verified-icon {
   width: 72px; height: 72px;
   border-radius: 50%;

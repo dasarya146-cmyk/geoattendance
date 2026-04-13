@@ -215,7 +215,12 @@ class FaceAuth {
   _onFaceVerified() {
     this._verified = true;
     if (this.progressBarEl)     this.progressBarEl.style.width = '100%';
-    if (this.verifiedOverlayEl) this.verifiedOverlayEl.hidden = false;
+    if (this.verifiedOverlayEl) {
+       this.verifiedOverlayEl.hidden = false;
+       setTimeout(() => {
+         if (this.verifiedOverlayEl) this.verifiedOverlayEl.hidden = true;
+       }, 2500);
+    }
     this._setStatus('verified', 'Face Verified ✓');
     this.stop(); // Release camera after verification
     this.onVerified();

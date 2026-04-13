@@ -147,7 +147,7 @@ function renderTable() {
     tbody.appendChild(tr);
   });
 
-  $('att-table').style.display     = 'table';
+  $('attendanceTable').style.display     = 'table';
   $('table-loading').style.display = 'none';
   $('table-empty').style.display   = 'none';
   $('table-error').style.display   = 'none';
@@ -157,7 +157,7 @@ function showTableState(state, msg = '') {
   $('table-loading').style.display = state === 'loading' ? '' : 'none';
   $('table-empty').style.display   = state === 'empty'   ? '' : 'none';
   $('table-error').style.display   = state === 'error'   ? '' : 'none';
-  $('att-table').style.display     = 'none';
+  $('attendanceTable').style.display     = 'none';
   if (state === 'error' && msg) $('table-error-msg').textContent = msg;
 }
 

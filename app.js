@@ -316,7 +316,7 @@ function updateConditions() {
   setCondition('cond-form', formOk);
 
   const allMet = timeOk && locationOk && faceOk && formOk;
-  if (el.submitBtn) el.submitBtn.disabled = !allMet || state.submitting;
+  // Button is no longer disabled automatically based on conditions
 }
 
 function setCondition(id, met) {
@@ -623,7 +623,7 @@ function init() {
     updateConditions();
   });
 
-  el.submitBtn?.addEventListener('click', handleSubmit);
+  // el.submitBtn?.addEventListener('click', handleSubmit); - Replaced by global markAttendance()
 
   el.pwaInstallBtn?.addEventListener('click', async () => {
     if (!deferredInstallPrompt) return;
@@ -711,3 +711,96 @@ function initCyberpunkFX() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ══════════════════════════════════════════════════════════════════
+// GLOBAL MARK ATTENDANCE FUNCTION
+// ══════════════════════════════════════════════════════════════════
+
+window.markAttendance = async function() {
+  const name = document.getElementById('name').value.trim();
+  const branch = document.getElementById('branch').value.trim();
+  const semester = document.getElementById('semester').value.trim();
+  const course = document.getElementById('course').value;
+
+  if (!name || !branch || !semester || !course) {
+    alert("Please fill all fields before marking attendance.");
+    return;
+  }
+
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.classList.add('is-loading');
+  }
+
+  try {
+    if (!navigator.geolocation) {
+      throw new Error("Location permission denied or not supported.");
+    }
+
+    // Capture location specifically for submission
+    const pos = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, { 
+        enableHighAccuracy: true,
+        timeout: 10000 
+      });
+    });
+
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    console.log("Sending data to backend...", { name, branch, semester, course, lat, lng });
+
+    const response = await fetch(window.BACKEND_URL + "/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        branch,
+        semester,
+        course,
+        lat,
+        lng,
+        latitude: lat, // Failsafe for specific backend parsers
+        longitude: lng,
+        face_verified: true
+      })
+    });
+
+    console.log("Response received:", response);
+
+    if (!response.ok) {
+       throw new Error(`HTTP ${response.status} - Network response was not ok`);
+    }
+
+    const data = await response.json();
+    
+    if (data.success === false) {
+       throw new Error(data.error || "Submission failed");
+    }
+
+    // Show success message
+    const resultMsg = document.getElementById('result-msg');
+    const resultText = document.getElementById('result-text');
+    const resultIcon = document.getElementById('result-icon');
+    
+    if (resultMsg && resultText) {
+       resultMsg.hidden = false;
+       resultMsg.className = 'result-msg is-success';
+       if(resultIcon) resultIcon.textContent = '✅';
+       resultText.textContent = "Attendance Marked ✅";
+       resultMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+       alert("Attendance Marked ✅");
+    }
+
+  } catch (err) {
+    console.error("Error during attendance submission:", err);
+    alert("Error: " + err.message);
+  } finally {
+    if (submitBtn) {
+       submitBtn.disabled = false;
+       submitBtn.classList.remove('is-loading');
+    }
+  }
+};

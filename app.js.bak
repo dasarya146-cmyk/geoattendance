@@ -408,22 +408,22 @@ async function handleSubmit() {
     let sheetsSuccess = false;
     let data;
 
-    if (window.BACKEND_URL) {
-      // ── POST to Node Express Backend ────────────────────────
-      const response = await fetch(window.BACKEND_URL + "/save", {
+    if (window.SHEETS_API_URL && !window.SHEETS_API_URL.includes('REPLACE_WITH')) {
+      // ── POST to Google Apps Script Web App ────────────────────────
+      const response = await fetch(window.SHEETS_API_URL, {
         method:   'POST',
-        headers:  { 'Content-Type': 'application/json' },
+        headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
         body:     JSON.stringify({
           name:         cleanName,
           branch:       cleanBranch,
           semester:     cleanSemester,
           course:       cleanCourse,
-          latitude:     state.location.lat,
-          longitude:    state.location.lon,
+          lat:          state.location.lat,
+          lng:         state.location.lon,
           face_verified: true,
-          timestamp:    timestamp,
-          distanceFromCampus: localRecord.distanceFromCampus
-        })
+          timestamp:    timestamp
+        }),
+        redirect: 'follow',
       });
 
       if (!response.ok) throw new Error(`Server responded with HTTP ${response.status}`);
@@ -637,77 +637,6 @@ function init() {
   });
 
   updateConditions();
-  initCyberpunkFX();
-}
-
-function initCyberpunkFX() {
-  // Spark Ripple Effect on Buttons
-  document.querySelectorAll('.btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      const rect = this.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const ripple = document.createElement('span');
-      ripple.className = 'spark-ripple';
-      ripple.style.left = `${x}px`;
-      ripple.style.top = `${y}px`;
-      
-      // Scale ripple appropriately to cover button
-      const size = Math.max(rect.width, rect.height) * 1.5;
-      ripple.style.width = `${size}px`;
-      ripple.style.height = `${size}px`;
-      ripple.style.marginLeft = `-${size/2}px`;
-      ripple.style.marginTop = `-${size/2}px`;
-      
-      this.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 600);
-    });
-  });
-
-  // Init tsParticles for floating micro-particles
-  if (window.tsParticles) {
-    window.tsParticles.load("tsparticles", {
-      fpsLimit: 60,
-      particles: {
-        number: { value: 60, density: { enable: true, value_area: 800 } },
-        color: { value: ["#00ff88", "#00f0ff", "#ffaa00"] },
-        shape: { type: "circle" },
-        opacity: {
-          value: 0.6,
-          random: true,
-          anim: { enable: true, speed: 1, opacity_min: 0.1, sync: false }
-        },
-        size: {
-          value: 3,
-          random: true,
-          anim: { enable: true, speed: 2, size_min: 0.1, sync: false }
-        },
-        move: {
-          enable: true,
-          speed: 0.6,
-          direction: "top",
-          random: true,
-          straight: false,
-          outMode: "out",
-          bounce: false,
-        }
-      },
-      interactivity: {
-        detectsOn: "canvas",
-        events: {
-          onHover: { enable: true, mode: "bubble" },
-          onClick: { enable: true, mode: "push" },
-          resize: true
-        },
-        modes: {
-          bubble: { distance: 100, size: 6, duration: 2, opacity: 1, speed: 3 },
-          push: { particles_nb: 4 }
-        }
-      },
-      retina_detect: true
-    });
-  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

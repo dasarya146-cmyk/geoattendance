@@ -25,13 +25,11 @@
 <body>
 
 
-  <!-- Particle Background -->
-  <div id="tsparticles" aria-hidden="true"></div>
-
-  <!-- Holographic Ambient Elements -->
+  <!-- Ambient background -->
   <div class="bg-ambient" aria-hidden="true">
-    <div class="hologram-animal hologram-eagle"></div>
-    <div class="hologram-animal hologram-panther"></div>
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
   </div>
 
   <!-- ── HEADER ─────────────────────────────────────────────── -->
@@ -479,13 +477,14 @@
     </div>
   </div>
 
-  <!-- Particle Engine -->
-  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
-
   <!-- face-api.js from jsDelivr (vladmandic maintained fork) -->
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/dist/face-api.js"></script>
 
-  <script src="./backend-config.js"></script>
+  <!-- Firebase Auth only -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="./sheets-config.js"></script>
 
   <script src="./face-auth.js"></script>
   <script src="./app.js"></script>

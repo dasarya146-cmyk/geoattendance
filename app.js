@@ -8,7 +8,7 @@
 // ── Campus / Attendance Config ────────────────────────────────────
 const CONFIG = {
   campus: { lat: 20.2169125, lon: 85.6829219, maxMeters: 700 }, // updated
-  window: { startH: 9, startM: 0, endH: 9, endM: 45 },
+  window: { startH: 9, startM: 0, endH: 11, endM: 0 },
   gps: { timeout: 10000, maximumAge: 0, enableHighAccuracy: true },
 };
 
@@ -112,7 +112,7 @@ function updateClock() {
     el.windowDot.className = 'status-dot ' + (inWindow ? 'dot-open' : 'dot-closed');
   if (el.windowLabel)
     el.windowLabel.textContent = inWindow
-      ? 'Attendance window is OPEN (9:00 – 9:45 AM)'
+      ? 'Attendance window is OPEN (9:00 – 11:00 AM)'
       : 'Window closed — opens 9:00 AM daily';
   if (el.banner) {
     el.banner.classList.toggle('banner-open', inWindow);
@@ -645,8 +645,10 @@ function initCyberpunkFX() {
   document.querySelectorAll('.btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
       const rect = this.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const clientX = e.clientX !== undefined && e.clientX !== 0 ? e.clientX : (e.touches && e.touches.length ? e.touches[0].clientX : rect.left + rect.width / 2);
+      const clientY = e.clientY !== undefined && e.clientY !== 0 ? e.clientY : (e.touches && e.touches.length ? e.touches[0].clientY : rect.top + rect.height / 2);
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
       
       const ripple = document.createElement('span');
       ripple.className = 'spark-ripple';
@@ -733,21 +735,36 @@ window.markAttendance = async function() {
     submitBtn.classList.add('is-loading');
   }
 
-  try {
-    if (!navigator.geolocation) {
-      throw new Error("Location permission denied or not supported.");
+  // Time window verification
+  const { inWindow } = getISTInfo();
+  if (!inWindow) {
+    if (submitBtn) {
+       submitBtn.disabled = false;
+       submitBtn.classList.remove('is-loading');
     }
+    alert("Attendance window is closed. Please submit between 9:00 AM and 11:00 AM IST.");
+    return;
+  }
 
-    // Capture location specifically for submission
-    const pos = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, { 
-        enableHighAccuracy: true,
-        timeout: 10000 
+  try {
+    let lat, lng;
+    if (state.location && state.location.captured && state.location.lat != null) {
+      lat = state.location.lat;
+      lng = state.location.lon;
+    } else {
+      if (!navigator.geolocation) {
+        throw new Error("Location permission denied or not supported.");
+      }
+      // Capture location specifically for submission
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { 
+          enableHighAccuracy: true,
+          timeout: 10000 
+        });
       });
-    });
-
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    }
 
     console.log("Sending data to backend...", { name, branch, semester, course, lat, lng });
 

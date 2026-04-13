@@ -1,7 +1,6 @@
 // Service Worker — Geo Attendance System v2.0
 // Strategy: network-first for navigation, network-only for API, cache-first for assets
-
-const CACHE = 'geo-att-v2';
+const CACHE = 'geo-att-v3';
 
 const SHELL = [
   './',

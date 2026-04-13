@@ -143,6 +143,11 @@ function renderTable() {
       <td style="font-family:monospace;font-variant-numeric:tabular-nums">${timeStr}</td>
       <td class="${r.face_verified ? 'face-check-yes' : 'face-check-no'}">${r.face_verified ? '✓' : '✗'}</td>
       <td style="font-family:monospace;font-size:0.72rem;color:var(--color-text-3)">${gps}</td>
+      <td style="text-align:center;">
+        <button class="btn-delete" title="Delete Record" onclick="deleteRecord('${r.id || r.timestamp}')" style="background:transparent;border:none;cursor:pointer;color:var(--color-error);font-size:1.1rem;padding:4px;transition:transform 0.2s;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -151,6 +156,26 @@ function renderTable() {
   $('table-loading').style.display = 'none';
   $('table-empty').style.display   = 'none';
   $('table-error').style.display   = 'none';
+}
+
+window.deleteRecord = async function(id) {
+  if (!confirm('Are you sure you want to delete this record?')) return;
+  
+  if (!window.BACKEND_URL) {
+    let locals = JSON.parse(localStorage.getItem('attendance_records') || '[]');
+    locals = locals.filter(r => String(r.id) !== String(id) && String(r.timestamp) !== String(id)); 
+    localStorage.setItem('attendance_records', JSON.stringify(locals));
+    loadData();
+    return;
+  }
+
+  try {
+     const res = await fetch(`${window.BACKEND_URL}/delete/${id}`, { method: 'DELETE' });
+     if (!res.ok) throw new Error('Failed to delete');
+     loadData();
+  } catch(e) {
+     alert('Error deleting record: ' + e.message + '\n\nMake sure your updated backend with the DELETE endpoint is fully deployed to Render!');
+  }
 }
 
 function showTableState(state, msg = '') {

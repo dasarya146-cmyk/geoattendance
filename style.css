@@ -547,6 +547,10 @@ a { color: inherit; text-decoration: none; }
   object-fit: cover;
   transform: scaleX(-1); /* Selfie mirror */
   display: block;
+  opacity: 1;
+  filter: brightness(1.2) contrast(1.1);
+  position: relative;
+  z-index: 1;
 }
 .camera-container canvas {
   position: absolute;
@@ -589,8 +593,8 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: rgba(0, 103, 71, 0.88);
-  z-index: 3;
+  background: rgba(0, 103, 71, 0.3); /* Lower opacity so face can be seen */
+  z-index: 20;
   animation: overlay-in 0.4s ease;
 }
 .verified-icon {

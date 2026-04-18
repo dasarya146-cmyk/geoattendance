@@ -142,6 +142,7 @@ function renderTable() {
       <td style="font-variant-numeric:tabular-nums">${esc(r.date)}</td>
       <td style="font-family:monospace;font-variant-numeric:tabular-nums">${timeStr}</td>
       <td class="${r.face_verified ? 'face-check-yes' : 'face-check-no'}">${r.face_verified ? '✓' : '✗'}</td>
+      <td style="text-align:center;">${r.image ? `<img src="${r.image}" width="60" height="60" style="border-radius:6px; object-fit:cover;" alt="Photo" />` : '—'}</td>
       <td style="font-family:monospace;font-size:0.72rem;color:var(--color-text-3)">${gps}</td>
       <td style="text-align:center;">
         <button class="delete-btn" title="Delete Record" onclick="deleteRecord('${r.id || r.timestamp}', this)" style="background:var(--color-error);border:none;cursor:pointer;color:#fff;font-size:0.75rem;padding:6px 12px;border-radius:4px;font-weight:600;display:inline-block;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
@@ -211,20 +212,24 @@ $('export-btn').addEventListener('click', () => {
   if (filter.course) data = data.filter(r => r.course === filter.course);
   if (!data.length) { alert('No records to export.'); return; }
 
-  const headers = ['#','Name','Branch','Semester','Course','Date','Time (IST)','Face Verified','Latitude','Longitude','Distance'];
-  const rows = data.map((r, i) => [
-    i + 1,
-    `"${(r.name     || '').replace(/"/g, '""')}"`,
-    `"${(r.branch   || '').replace(/"/g, '""')}"`,
-    `"${(r.semester || '').replace(/"/g, '""')}"`,
-    r.course,
-    r.date,
-    `"${r.time || (r.timestamp ? formatISTTime(r.timestamp) : '')}"`,
-    r.face_verified ? 'Yes' : 'No',
-    r.latitude != null ? r.latitude : (r.lat != null ? r.lat : ''),
-    r.longitude != null ? r.longitude : (r.lng != null ? r.lng : ''),
-    r.distance  || '',
-  ]);
+  const headers = ['Name','Branch','Semester','Course','Latitude','Longitude','Time'];
+  const rows = data.map((r) => {
+    const stripHtml = (str) => (str || '').toString().replace(/(<([^>]+)>)/gi, '').replace(/"/g, '""');
+    
+    const latStr = r.latitude != null ? r.latitude : (r.lat != null ? r.lat : '');
+    const lngStr = r.longitude != null ? r.longitude : (r.lng != null ? r.lng : '');
+    const timeStr = r.time || (r.timestamp ? formatISTTime(r.timestamp) : '');
+
+    return [
+      `"${stripHtml(r.name)}"`,
+      `"${stripHtml(r.branch)}"`,
+      `"${stripHtml(r.semester)}"`,
+      `"${stripHtml(r.course)}"`,
+      `"${latStr}"`,
+      `"${lngStr}"`,
+      `"${stripHtml(timeStr)}"`
+    ];
+  });
 
   const csv  = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

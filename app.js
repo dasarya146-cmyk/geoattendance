@@ -389,6 +389,17 @@ async function handleSubmit() {
   const nowRaw = new Date();
   const timestamp = nowRaw.toISOString();
 
+  let image = null;
+  const video = document.getElementById('face-video');
+  const canvas = document.getElementById('face-canvas');
+  if (video && canvas && state.face.verified) {
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth || 320;
+    canvas.height = video.videoHeight || 240;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    image = canvas.toDataURL("image/png");
+  }
+
   // Prepare local record
   const localRecord = {
     name: cleanName,
@@ -401,7 +412,8 @@ async function handleSubmit() {
     date: today,
     timestamp: timestamp,
     time: nowRaw.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }),
-    distanceFromCampus: Math.round(state.location.distance) + 'm'
+    distanceFromCampus: Math.round(state.location.distance) + 'm',
+    image
   };
 
   try {
@@ -422,7 +434,8 @@ async function handleSubmit() {
           longitude:    state.location.lon,
           face_verified: true,
           timestamp:    timestamp,
-          distanceFromCampus: localRecord.distanceFromCampus
+          distanceFromCampus: localRecord.distanceFromCampus,
+          image
         })
       });
 
@@ -766,7 +779,19 @@ window.markAttendance = async function() {
       lng = pos.coords.longitude;
     }
 
-    console.log("Sending data to backend...", { name, branch, semester, course, lat, lng });
+    let image = null;
+    const video = document.getElementById('face-video');
+    const canvas = document.getElementById('face-canvas');
+    if (video && canvas) {
+      const ctx = canvas.getContext('2d');
+      // Set reasonable defaults if video dimensions are missing
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 240;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      image = canvas.toDataURL("image/png");
+    }
+
+    console.log("Sending data to backend...", { name, branch, semester, course, lat, lng, image: image ? "captured" : "none" });
 
     const response = await fetch(window.BACKEND_URL + "/save", {
       method: "POST",
@@ -780,7 +805,8 @@ window.markAttendance = async function() {
         lng,
         latitude: lat, // Failsafe for specific backend parsers
         longitude: lng,
-        face_verified: true
+        face_verified: true,
+        image
       })
     });
 
